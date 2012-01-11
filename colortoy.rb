@@ -11,6 +11,11 @@ MIN_CLUSTERS = 4
 # hahaha
 INFINITY = 2**63
 
+if ARGV.size < 1
+  STDERR.puts("Usage: colortoy.rb <image file imagemagick can read> [<number of colors>]")
+  exit 1
+end
+
 class Vector
   def cosine(other)
     if other.size != size
