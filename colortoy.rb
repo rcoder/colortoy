@@ -29,8 +29,6 @@ def main(img_name, cluster_cnt)
     Vector.elements(tuple)
   end
 
-  color_clusters = Cluster.kmeans(colors, cluster_cnt)
-
   color_names = color_clusters.map do |t|
     t[0..2].inject("#") {|s, c| s + "%02x" % (c*256) }
   end
@@ -61,8 +59,17 @@ __END__
   <head>
     <title>Image analysis for <%= img_name %></title>
     <style>
+      body {
+        background-color: #161616;
+      }
+
       .src-image {
         text-align: center;
+        padding: 8px;
+      }
+
+      .src-image img {
+        border: 3px solid #000;
       }
 
       .color-wrap {
@@ -72,6 +79,7 @@ __END__
       .color-span {
         color: #fff; font-size: 16px; font-weight: bold; width: 128px;
         padding: 16px; margin: 8px; font-family: sans-serif;
+        border: 3px solid #000;
       }
     </style>
   </head>
