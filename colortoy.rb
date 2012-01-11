@@ -1,12 +1,5 @@
 #!/usr/bin/env ruby
 
-=begin
-This script generates a simple HTML visualization of a color palette extracted
-from an image on your local system. It uses the RMagick library to determine
-which colors occur the image, then uses a sperical K-means clustering algorithm
-to de-dupe similar colors in the resulting palette.
-=end
-
 require 'erb'
 require 'tempfile'
 require 'matrix'
