@@ -11,11 +11,6 @@ MIN_CLUSTERS = 4
 # hahaha
 INFINITY = 2**63
 
-if ARGV.size < 1
-  STDERR.puts("Usage: colortoy.rb <image file imagemagick can read> [<number of colors>]")
-  exit 1
-end
-
 class Vector
   def cosine(other)
     if other.size != size
@@ -121,34 +116,45 @@ def kmeans(vectors, k, delta=0.00005)
   clusters.map {|c| Vector.average(c.members).to_a }
 end
 
-template = ERB.new(DATA.read)
+def main(img_name, cluster_cnt)
+  template = ERB.new(DATA.read)
 
-img_name = ARGV[0]
-img_path = File.expand_path(img_name)
-src_img = Magick::Image.read(ARGV[0]).first
-palette = src_img.resize_to_fit(512, 512).quantize(128)
-width = palette.columns
-height = palette.rows
+  img_path = File.expand_path(img_name)
+  src_img = Magick::Image.read(img_name).first
+  palette = src_img.resize_to_fit(512, 512).quantize(128)
+  width = palette.columns
+  height = palette.rows
 
-colors = palette.color_histogram.keys.map do |p|
-  Vector.elements([p.red, p.green, p.blue, p.intensity].map {|i| i / (2**16).to_f})
+  colors = palette.color_histogram.keys.map do |p|
+    tuple = [p.red, p.green, p.blue, p.intensity].map {|i| i/(2**16).to_f }
+    Vector.elements(tuple)
+  end
+
+  color_clusters = kmeans(colors, cluster_cnt)
+
+  color_names = color_clusters.map do |t|
+    t[0..2].inject("#") {|s, c| s + "%0x" % (c*256) }
+  end
+
+  Tempfile.open(['colortoy', '.html']) do |fh|
+    fh.write(template.result(binding))
+    fh.flush
+    fh.close
+    cmd = "open #{fh.path}"
+    puts cmd
+    system(cmd)
+    puts "Press Enter when finished..."
+    STDIN.gets
+  end
 end
 
-color_clusters = kmeans(colors, (ARGV[1] || MIN_CLUSTERS).to_i)
+if $0 == __FILE__
+  if ARGV.size < 1
+    STDERR.puts("Usage: colortoy.rb <image file imagemagick can read> [<number of colors>]")
+    exit 1
+  end
 
-color_names = color_clusters.map do |t|
-  t[0..2].inject("#") {|s, c| s + "%0x" % (c*256) }
-end
-
-Tempfile.open(['colortoy', '.html']) do |fh|
-  fh.write(template.result(binding))
-  fh.flush
-  fh.close
-  cmd = "open #{fh.path}"
-  puts cmd
-  system(cmd)
-  puts "Press Enter when finished..."
-  STDIN.gets
+  main(ARGV[0], (ARGV[1] || MIN_CLUSTERS).to_i)
 end
 
 __END__
