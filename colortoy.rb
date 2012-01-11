@@ -4,117 +4,16 @@ require 'erb'
 require 'tempfile'
 require 'matrix'
 
+$: << File.dirname(__FILE__) + "/lib"
+require 'core_ext'
+require 'cluster'
+
 require 'rubygems'
 require 'rmagick'
 
 MIN_CLUSTERS = 4
 # hahaha
 INFINITY = 2**63
-
-class Vector
-  def cosine(other)
-    if other.size != size
-      raise ArgumentError, "cannot take cosine of differently-sized vectors!"
-    end
-
-    inner_product(other) / (r * other.r)
-  end
-
-  def self.unit_f(dim)
-    make_with_dim(1.0, dim)
-  end
-
-  def self.zeros(dim)
-    make_with_dim(0, dim)
-  end
-
-  def self.average(vectors)
-    if vectors.empty?
-      raise ArgumentError, "cannot take average of empty vector array"
-    end
-
-    sum = zeros(vectors.first.size)
-    vectors.each {|vec| sum += vec }
-    sum / vectors.size
-  end
-
-  private
-
-  def self.make_with_dim(init_val, dim)
-    elements([init_val]*dim)
-  end
-end
-
-class Array
-  def pop_rand!
-    delete_at(rand(size))
-  end
-end
-
-class Cluster
-  attr_accessor :centroid, :members
-
-  def initialize(dim, center=nil)
-    @dims = dim
-    @centroid = center || Vector.random_f(dim)
-    @members = []
-    @members << center unless center.nil?
-  end
-
-  def find_centroid!
-    prev_centroid = @centroid
-    @centroid = Vector.average(@members)
-    1.0 - @centroid.cosine(prev_centroid)
-  end
-end
-
-def kmeans(vectors, k, delta=0.00005)
-  dim = vectors.first.size
-  initial_assigns = vectors.dup
-  clusters = []
-
-  k.times do
-    init = initial_assigns.pop_rand!
-    clusters << Cluster.new(dim, init)
-  end
-
-  cluster_idx = {}
-
-  while initial_assigns.size > 0
-    vec = initial_assigns.pop_rand!
-    c = clusters[rand(clusters.size)]
-    cluster_idx[vec] = c
-    c.members << vec
-  end
-
-  while true
-    clusters.reject! {|c| c.members.empty? }
-    curr_deltas = clusters.map {|c| c.find_centroid! }
-    max_delta = curr_deltas.max
-    break if max_delta <= delta || clusters.size < 2
-
-    vectors.each do |vec|
-      best_cluster = nil
-      best_score = -INFINITY
-      clusters.each do |c|
-        score = vec.cosine(c.centroid)
-        if score >= best_score
-          best_cluster = c
-          best_score = score
-        end
-      end
-
-      if cluster_idx.has_key?(vec)
-        cluster_idx[vec].members.delete(vec)
-      end
-
-      best_cluster.members << vec
-      cluster_idx[vec] = best_cluster
-    end
-  end
-
-  clusters.map {|c| Vector.average(c.members).to_a }
-end
 
 def main(img_name, cluster_cnt)
   template = ERB.new(DATA.read)
@@ -130,7 +29,7 @@ def main(img_name, cluster_cnt)
     Vector.elements(tuple)
   end
 
-  color_clusters = kmeans(colors, cluster_cnt)
+  color_clusters = Cluster.kmeans(colors, cluster_cnt)
 
   color_names = color_clusters.map do |t|
     t[0..2].inject("#") {|s, c| s + "%0x" % (c*256) }
@@ -141,8 +40,7 @@ def main(img_name, cluster_cnt)
     fh.flush
     fh.close
     cmd = "open #{fh.path}"
-    puts cmd
-    system(cmd)
+    system cmd
     puts "Press Enter when finished..."
     STDIN.gets
   end
