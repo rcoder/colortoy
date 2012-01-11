@@ -29,6 +29,8 @@ def main(img_name, cluster_cnt)
     Vector.elements(tuple)
   end
 
+  color_clusters = Cluster.kmeans(colors, cluster_cnt)
+
   color_names = color_clusters.map do |t|
     t[0..2].inject("#") {|s, c| s + "%02x" % (c*256) }
   end
