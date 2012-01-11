@@ -12,8 +12,6 @@ require 'rubygems'
 require 'rmagick'
 
 MIN_CLUSTERS = 4
-# hahaha
-INFINITY = 2**63
 
 def main(img_name, cluster_cnt)
   template = ERB.new(DATA.read)

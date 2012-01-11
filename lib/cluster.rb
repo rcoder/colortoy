@@ -1,3 +1,6 @@
+# Numerical tower? What numerical tower?
+Infinity = 1/0.0
+
 class Cluster
   attr_accessor :centroid, :members
 
@@ -41,7 +44,7 @@ class Cluster
 
       vectors.each do |vec|
         best_cluster = nil
-        best_score = -INFINITY
+        best_score = -Infinity
         clusters.each do |c|
           score = vec.cosine(c.centroid)
           if score >= best_score
