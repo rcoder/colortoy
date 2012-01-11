@@ -32,7 +32,7 @@ def main(img_name, cluster_cnt)
   color_clusters = Cluster.kmeans(colors, cluster_cnt)
 
   color_names = color_clusters.map do |t|
-    t[0..2].inject("#") {|s, c| s + "%0x" % (c*256) }
+    t[0..2].inject("#") {|s, c| s + "%02x" % (c*256) }
   end
 
   Tempfile.open(['colortoy', '.html']) do |fh|
